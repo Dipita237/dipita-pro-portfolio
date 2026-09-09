@@ -23,7 +23,7 @@ export default async function CaseStudyPage({ params }: Props) {
       <header className="mb-8">
         <h1 className="text-3xl font-bold">{frontmatter.title}</h1>
         <p className="mt-2 text-gray-600">{frontmatter.summary}</p>
-        {frontmatter.tags?.length ? (
+        {frontmatter.tags && Array.isArray(frontmatter.tags) && frontmatter.tags.length ? (
           <div className="mt-4 flex flex-wrap gap-2">
             {frontmatter.tags.map((t) => (
               <span key={t} className="rounded-full bg-gray-100 px-3 py-1 text-sm">

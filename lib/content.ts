@@ -58,7 +58,8 @@ function parseFrontmatter(text: string): Record<string, unknown> {
 
     if (line.startsWith('- ')) {
       if (currentKey && Array.isArray(out[currentKey])) {
-        ;(out[currentKey] as string[]).push(line.slice(2).trim())
+        const arr = out[currentKey] as string[]
+        arr.push(line.slice(2).trim())
       }
       continue
     }
@@ -73,7 +74,20 @@ function parseFrontmatter(text: string): Record<string, unknown> {
       out[key] = []
     } else {
       currentKey = null
-      out[key] = value.replace(/^"(.*)"$/, '$1').replace(/^'(.*)'$/, '$1')
+      
+      // Check if the value is an inline bracketed array: ["A", "B"]
+      if (value.startsWith('[') && value.endsWith(']')) {
+        out[key] = value
+          .slice(1, -1)              // Remove brackets [ ]
+          .split(',')                 // Split by comma
+          .map((item) =>              // Trim and unquote each item
+            item.trim().replace(/^["'](.*)["']$/, '$1')
+          )
+          .filter(Boolean)            // Clear empty slots if any
+      } else {
+        // Unquote simple strings
+        out[key] = value.replace(/^"(.*)"$/, '$1').replace(/^'(.*)'$/, '$1')
+      }
     }
   }
 
