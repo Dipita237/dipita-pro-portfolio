@@ -1,6 +1,16 @@
 import { getAllCaseStudyMeta, getCaseStudyMeta } from '@/lib/content'
 import { notFound } from 'next/navigation'
 
+// Dynamic import helper for MDX files under content/case-studies
+async function importCaseStudy(slug: string) {
+  try {
+    const mod = await import(`../../content/case-studies/${slug}.mdx`)
+    return mod.default as React.ComponentType
+  } catch {
+    return null
+  }
+}
+
 type Props = {
   params: Promise<{ slug: string }>
 }
@@ -15,8 +25,9 @@ export default async function CaseStudyPage({ params }: Props) {
   const meta = getCaseStudyMeta(slug)
   if (!meta) notFound()
 
-  // For now we show frontmatter; later we'll render the MDX body too
   const { frontmatter } = meta
+  const MDXContent = await importCaseStudy(slug)
+  if (!MDXContent) notFound()
 
   return (
     <article className="mx-auto max-w-3xl px-6 py-12">
@@ -35,8 +46,7 @@ export default async function CaseStudyPage({ params }: Props) {
       </header>
 
       <section className="prose max-w-none">
-        {/* We'll wire MDX rendering next; this placeholder keeps TS happy */}
-        <p>Content coming soon…</p>
+        <MDXContent />
       </section>
 
       <footer className="mt-10 border-t pt-6 text-sm text-gray-600">
