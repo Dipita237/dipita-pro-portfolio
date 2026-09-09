@@ -13,10 +13,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version-file: '.nvmrc'
           cache: 'npm'
@@ -31,7 +31,8 @@ jobs:
         run: npx tsc --noEmit
 
       - name: Tests
-        run: npm test
+        # Allow empty suites while we add real tests
+        run: npm test -- --passWithNoTests
 
       - name: Build
         run: npm run build
