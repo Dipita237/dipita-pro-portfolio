@@ -1,0 +1,86 @@
+import fs from 'fs'
+import path from 'path'
+
+export type CaseStudyFrontmatter = {
+  title: string
+  date: string
+  tags: string[]
+  summary: string
+  coverImage?: string
+  liveUrl?: string
+  repoUrl?: string
+  metrics?: string[]
+}
+
+export type CaseStudyMeta = {
+  slug: string
+  frontmatter: CaseStudyFrontmatter
+}
+
+const contentDir = path.join(process.cwd(), 'content/case-studies')
+
+export function getCaseStudySlugs(): string[] {
+  if (!fs.existsSync(contentDir)) return []
+  const files = fs.readdirSync(contentDir)
+  return files
+    .filter((file) => file.endsWith('.mdx'))
+    .map((file) => file.replace(/\.mdx$/, ''))
+}
+
+export function getCaseStudyMeta(slug: string): CaseStudyMeta | null {
+  const filePath = path.join(contentDir, `${slug}.mdx`)
+  if (!fs.existsSync(filePath)) return null
+
+  const source = fs.readFileSync(filePath, 'utf8')
+  const match = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/.exec(source)
+  if (!match) return null
+
+  const fmText = match[1]
+  const frontmatter = parseFrontmatter(fmText) as CaseStudyFrontmatter
+
+  return { slug, frontmatter }
+}
+
+export function getAllCaseStudyMeta(): CaseStudyMeta[] {
+  return getCaseStudySlugs()
+    .map((slug) => getCaseStudyMeta(slug))
+    .filter((m): m is CaseStudyMeta => m !== null)
+    .sort((a, b) => +new Date(b.frontmatter.date) - +new Date(a.frontmatter.date))
+}
+
+function parseFrontmatter(text: string): Record<string, unknown> {
+  // Simple YAML-like parser for our controlled frontmatter
+  const out: Record<string, unknown> = {}
+  const lines = text.split('\n')
+  let currentKey: string | null = null
+  let currentArray: string[] | null = null
+
+  for (const raw of lines) {
+    const line = raw.trimEnd()
+    if (!line.trim()) continue
+
+    if (line.startsWith('- ')) {
+      if (currentKey && Array.isArray(out[currentKey])) {
+        ;(out[currentKey] as string[]).push(line.slice(2).trim())
+      }
+      continue
+    }
+
+    const idx = line.indexOf(':')
+    if (idx === -1) continue
+    const key = line.slice(0, idx).trim()
+    const value = line.slice(idx + 1).trim()
+
+    if (value === '') {
+      currentKey = key
+      out[key] = []
+      currentArray = out[key] as string[]
+    } else {
+      currentKey = null
+      currentArray = null
+      out[key] = value.replace(/^"(.*)"$/, '$1').replace(/^'(.*)'$/, '$1')
+    }
+  }
+
+  return out
+}
