@@ -47,13 +47,10 @@ export function getAllCaseStudyMeta(): CaseStudyMeta[] {
     .filter((m): m is CaseStudyMeta => m !== null)
     .sort((a, b) => +new Date(b.frontmatter.date) - +new Date(a.frontmatter.date))
 }
-
 function parseFrontmatter(text: string): Record<string, unknown> {
-  // Simple YAML-like parser for our controlled frontmatter
   const out: Record<string, unknown> = {}
   const lines = text.split('\n')
   let currentKey: string | null = null
-  let currentArray: string[] | null = null
 
   for (const raw of lines) {
     const line = raw.trimEnd()
@@ -74,10 +71,8 @@ function parseFrontmatter(text: string): Record<string, unknown> {
     if (value === '') {
       currentKey = key
       out[key] = []
-      currentArray = out[key] as string[]
     } else {
       currentKey = null
-      currentArray = null
       out[key] = value.replace(/^"(.*)"$/, '$1').replace(/^'(.*)'$/, '$1')
     }
   }
